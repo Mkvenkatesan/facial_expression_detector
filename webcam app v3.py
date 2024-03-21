@@ -1,22 +1,29 @@
 import cv2
 import numpy as np
+from tensorflow.keras.models import load_model
 
-# Load pre-trained face detection and expression recognition models
+# Load the pre-trained model
+model = load_model('emotion_detection_model_augmented.h5')
+
+# Load pre-trained face detection model
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-emotion_model = cv2.dnn.readNetFromTensorflow("emotion_detection_model.pb")
 
 # List of emotion labels
 EMOTIONS = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"]
 
-def detect_emotion(face_roi):
-    face_roi = cv2.resize(face_roi, (48, 48))
-    face_roi = np.expand_dims(face_roi, axis=0)
-    face_roi = face_roi / 255.0
-
-    emotion_model.setInput(face_roi)
-    emotion_preds = emotion_model.forward()
-    emotion_label = EMOTIONS[emotion_preds[0].argmax()]
-    
+def predict_emotion(frame):
+    # Resize frame to match model input shape
+    resized_frame = cv2.resize(frame, (640, 480))
+    # Convert frame to grayscale
+    gray = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
+    # Expand dimensions to match model input
+    gray = np.expand_dims(gray, axis=-1)
+    # Normalize pixel values
+    gray = gray / 255.0
+    # Predict emotion
+    predictions = model.predict(np.array([gray]))
+    # Get predicted emotion label
+    emotion_label = EMOTIONS[np.argmax(predictions[0])]
     return emotion_label
 
 def main():
@@ -33,12 +40,12 @@ def main():
             print("Error: Couldn't capture a frame.")
             break
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+        # Detect faces
+        faces = face_cascade.detectMultiScale(frame, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
         for (x, y, w, h) in faces:
-            face_roi = gray[y:y + h, x:x + w]
-            emotion_label = detect_emotion(face_roi)
+            face_roi = frame[y:y + h, x:x + w]
+            emotion_label = predict_emotion(face_roi)
 
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
             cv2.putText(frame, emotion_label, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
