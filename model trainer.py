@@ -1,45 +1,40 @@
-import os
 import cv2
 import numpy as np
+import os
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-# Function to load images from directory
-def load_images_from_dir(data_dir):
+# Function to load images from a directory
+def load_images_from_dir(directory, label):
     data = []
-    labels = []
-    label = 0
-    for emotion in os.listdir(data_dir):
-        emotion_dir = os.path.join(data_dir, emotion)
-        if os.path.isdir(emotion_dir):
-            for image_file in os.listdir(emotion_dir):
-                image_path = os.path.join(emotion_dir, image_file)
-                if image_file.endswith('.jpg') or image_file.endswith('.png'):
-                    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-                    data.append(img)
-                    labels.append(label)
-            label += 1
-    return np.array(data), np.array(labels)
+    for filename in os.listdir(directory):
+        img = cv2.imread(os.path.join(directory, filename), cv2.IMREAD_GRAYSCALE)
+        if img is not None:
+            data.append([img, label])
+    return data
 
-# Data augmentation
-def augment_data(X_train):
-    datagen = ImageDataGenerator(
-        rotation_range=10,
-        width_shift_range=0.1,
-        height_shift_range=0.1,
-        zoom_range=0.1,
-        horizontal_flip=True,
-        vertical_flip=True,
-        fill_mode='nearest')
-    
-    datagen.fit(X_train)
-    return datagen
+# Load images for each emotion label
+emotions_dir = {
+    "Angry": "path_to_angry_images_directory",
+    "Disgust": "path_to_disgust_images_directory",
+    "Fear": "path_to_fear_images_directory",
+    "Happy": "path_to_happy_images_directory",
+    "Sad": "path_to_sad_images_directory",
+    "Surprise": "path_to_surprise_images_directory",
+    "Neutral": "path_to_neutral_images_directory"
+}
 
-# Load images from dataset directory
-dataset_dir = "path/to/dataset"
-X, y = load_images_from_dir(dataset_dir)
+all_data = []
+for emotion, directory in emotions_dir.items():
+    print(f"Loading images for {emotion}...")
+    data = load_images_from_dir(directory, emotions.index(emotion))
+    all_data.extend(data)
+
+# Preprocess data
+X = np.array([entry[0] for entry in all_data])
+y = np.array([entry[1] for entry in all_data])
 
 # Reshape data for CNN
 X = X.reshape(-1, X.shape[1], X.shape[2], 1)
@@ -48,7 +43,16 @@ X = X.reshape(-1, X.shape[1], X.shape[2], 1)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Data augmentation
-datagen = augment_data(X_train)
+datagen = ImageDataGenerator(
+    rotation_range=10,
+    width_shift_range=0.1,
+    height_shift_range=0.1,
+    zoom_range=0.1,
+    horizontal_flip=True,
+    vertical_flip=True,
+    fill_mode='nearest')
+
+datagen.fit(X_train)
 
 # Define CNN model architecture
 model = Sequential([
@@ -64,7 +68,7 @@ model = Sequential([
     Flatten(),
     Dense(256, activation='relu'),
     Dropout(0.5),
-    Dense(len(set(y)), activation='softmax')  # Output layer with softmax activation
+    Dense(len(emotions), activation='softmax')  # Output layer with softmax activation
 ])
 
 # Compile the model
