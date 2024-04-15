@@ -15,15 +15,18 @@ def load_images_from_dir(directory, label):
             data.append([img, label])
     return data
 
+# Define the emotion labels
+emotions = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"]
+
 # Load images for each emotion label
 emotions_dir = {
-    "Angry": "path_to_angry_images_directory",
-    "Disgust": "path_to_disgust_images_directory",
-    "Fear": "path_to_fear_images_directory",
-    "Happy": "path_to_happy_images_directory",
-    "Sad": "path_to_sad_images_directory",
-    "Surprise": "path_to_surprise_images_directory",
-    "Neutral": "path_to_neutral_images_directory"
+    "Angry": "E:/major/images/train/angry",
+    "Disgust": "E:/major/images/train/disgust",
+    "Fear": "E:/major/images/train/fear",
+    "Happy": "E:/major/images/train/happy",
+    "Sad": "E:/major/images/train/sad",
+    "Surprise": "E:/major/images/train/surprise",
+    "Neutral": "E:/major/images/train/neutral"
 }
 
 all_data = []
